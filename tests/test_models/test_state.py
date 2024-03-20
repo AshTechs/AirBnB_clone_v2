@@ -6,7 +6,7 @@ from tests.test_models.test_base_model import test_basemodel
 from models.state import State
 
 
-class test_state(test_basemodel):
+class testState(test_basemodel):
     """Unit tests for the State class"""
 
     def __init__(self, *args, **kwargs):
@@ -15,7 +15,7 @@ class test_state(test_basemodel):
         self.name = "State"
         self.value = State
 
-    def test_name3(self):
+    def testName3(self):
         """Test if name attribute is of type string"""
         new = self.value()
         self.assertEqual(type(new.name), str)
