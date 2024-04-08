@@ -4,7 +4,7 @@
 from fabric.api import env, put, run
 from os.path import exists
 
-env.hosts = ['34.204.61.94', '54.242.154.151']
+env.hosts = ['54.157.134.237', '54.242.154.151']
 
 
 def do_deploy(archive_path):
@@ -29,18 +29,15 @@ def do_deploy(archive_path):
         # Delete the archive
         run('rm /tmp/{}'.format(archive_filename))
 
-        # Update symbolic link
-        update_symlink(archive_folder)
+        # Delete old symbolic link if exists
+        if exists('/data/web_static/current'):
+            run('rm /data/web_static/current')
+
+        # Create new symbolic link
+        run('ln -s {} /data/web_static/current'.format(archive_folder))
 
         return True
 
     except Exception as e:
         print(e)
         return False
-
-
-def update_symlink(archive_folder):
-    """Updates the symbolic link"""
-    current_link = '/data/web_static/current'
-    run('rm -f {}'.format(current_link))  # Remove old link
-    run('ln -s {} {}'.format(archive_folder, current_link))  # Create new link
