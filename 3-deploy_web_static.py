@@ -13,6 +13,9 @@ env.hosts = ['54.157.134.237', '54.242.154.151']
 def do_pack():
     """
     Creates a .tgz archive from the contents of the web_static folder
+
+    Returns:
+        str: Path to the created archive if successful, None otherwise
     """
     try:
         now = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -27,6 +30,12 @@ def do_pack():
 def do_deploy(archive_path):
     """
     Distributes an archive to your web servers
+
+    Args:
+        archive_path (str): Path to the archive to be deployed
+
+    Returns:
+        bool: True if deployment successful, False otherwise
     """
 
     if not os.path.exists(archive_path):
@@ -51,6 +60,9 @@ def do_deploy(archive_path):
 def deploy():
     """
     Deploys an archive to your web servers
+
+    Returns:
+        bool: True if deployment successful, False otherwise
     """
 
     archive_path = do_pack()
