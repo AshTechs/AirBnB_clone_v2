@@ -38,7 +38,8 @@ def do_deploy(archive_path):
         run('mkdir -p {}'.format(archive_folder))
 
         # Uncompress the archive
-        run('tar -xzf /tmp/{} -C {}'.format(archive_filename, archive_folder))
+        run('tar -xzf /tmp/{} -C {}'.format(
+            archive_filename, archive_folder))
 
         # Delete the archive
         run('rm /tmp/{}'.format(archive_filename))
