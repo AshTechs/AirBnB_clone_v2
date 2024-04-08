@@ -1,23 +1,10 @@
 #!/usr/bin/python3
-"""Fabric script to create and distribute an archive to web servers"""
+"""Fabric script to distribute an archive to web servers"""
 
-from fabric.api import env, local, run
+from fabric.api import env, put, run
 from os.path import exists
-from datetime import datetime
 
-env.hosts = ['<IP web-01>', '<IP web-02>']
-
-
-def do_pack():
-    """Creates a compressed archive of web_static folder"""
-    try:
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        filename = 'versions/web_static_{}.tgz'.format(timestamp)
-        local('mkdir -p versions')
-        local('tar -czvf {} web_static'.format(filename))
-        return filename
-    except Exception:
-        return None
+env.hosts = ['54.157.134.237', '54.242.154.151']
 
 
 def do_deploy(archive_path):
@@ -42,8 +29,12 @@ def do_deploy(archive_path):
         # Delete the archive
         run('rm /tmp/{}'.format(archive_filename))
 
-        # Update symbolic link
-        update_symlink(archive_folder)
+        # Delete old symbolic link if exists
+        if exists('/data/web_static/current'):
+            run('rm /data/web_static/current')
+
+        # Create new symbolic link
+        run('ln -s {} /data/web_static/current'.format(archive_folder))
 
         return True
 
@@ -52,17 +43,43 @@ def do_deploy(archive_path):
         return False
 
 
-def update_symlink(archive_folder):
-    """Updates the symbolic link"""
-    current_link = '/data/web_static/current'
-    run('rm -f {}'.format(current_link))  # Remove old link
-    run('ln -s {} {}'.format(archive_folder, current_link))  # Create new link
+def do_deploy_with_new_index(archive_path):
+    """Distributes an archive to web servers and sets new index"""
+    if do_deploy(archive_path):
+        try:
+            # Remove default index.html
+            run('rm /data/web_static/releases/{}/index.html'.format(
+                archive_path.split('/')[-1].split('.')[0]))
+
+            # Upload custom index.html
+            put('my_index.html', '/data/web_static/releases/{}/'.format(
+                archive_path.split('/')[-1].split('.')[0]))
+
+            return True
+
+        except Exception as e:
+            print(e)
+            return False
+
+    return False
 
 
-def deploy():
-    """Creates and distributes an archive to web servers"""
-    archive_path = do_pack()
-    if not archive_path:
-        return False
+def do_deploy_with_old_index(archive_path):
+    """Distributes an archive to web servers and sets old index"""
+    if do_deploy(archive_path):
+        try:
+            # Remove custom index.html if exists
+            run('rm /data/web_static/releases/{}/my_index.html'.format(
+                archive_path.split('/')[-1].split('.')[0]))
 
-    return do_deploy(archive_path)
+            # Upload default index.html
+            put('0-index.html', '/data/web_static/releases/{}/index.html'.format(
+                archive_path.split('/')[-1].split('.')[0]))
+
+            return True
+
+        except Exception as e:
+            print(e)
+            return False
+
+    return False
