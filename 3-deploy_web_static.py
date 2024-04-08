@@ -32,7 +32,7 @@ def do_deploy(archive_path):
         # Get archive filename without extension
         archive_filename = archive_path.split('/')[-1]
         archive_folder = ('/data/web_static/releases/' + 
-                archive_filename.split('.')[0])
+                         archive_filename.split('.')[0])
 
         # Create directory to uncompress archive
         run('mkdir -p {}'.format(archive_folder))
