@@ -18,7 +18,8 @@ def do_clean(number=0):
             local('ls -t | tail -n +{} | xargs rm -f'.format(number + 1))
 
         # Remote cleanup
-        run('ls -t /data/web_static/releases | tail -n +{} | xargs rm -rf'.format(number + 1))
+        run('ls -t /data/web_static/releases | tail -n +{} |
+                xargs rm -rf'.format(number + 1))
 
     except Exception as e:
         print(e)
