@@ -1,85 +1,59 @@
 #!/usr/bin/python3
-"""Fabric script to distribute an archive to web servers"""
+"""
+Fabric script that creates and distributes an archive to your web servers
+"""
 
-from fabric.api import env, put, run
-from os.path import exists
+from fabric.api import local, run
+from datetime import datetime
+import os
 
 env.hosts = ['54.157.134.237', '54.242.154.151']
 
 
+def do_pack():
+    """
+    Creates a .tgz archive from the contents of the web_static folder
+    """
+    try:
+        now = datetime.now().strftime('%Y%m%d%H%M%S')
+        local('mkdir -p versions')
+        file_name = 'versions/web_static_{}.tgz'.format(now)
+        local('tar -cvzf {} web_static'.format(file_name))
+        return file_name
+    except:
+        return None
+
+
 def do_deploy(archive_path):
-    """Distributes an archive to web servers"""
-    if not exists(archive_path):
+    """
+    Distributes an archive to your web servers
+    """
+
+    if not os.path.exists(archive_path):
         return False
 
     try:
-        # Upload the archive to /tmp/ directory
+        filename = archive_path.split('/')[-1]
+        folder = '/data/web_static/releases/{}'.format(filename.split('.')[0])
         put(archive_path, '/tmp/')
-
-        # Get archive filename without extension
-        archive_filename = archive_path.split('/')[-1]
-        archive_folder = '/data/web_static/releases/' + archive_filename.split('.')[0]
-
-        # Create directory to uncompress archive
-        run('mkdir -p {}'.format(archive_folder))
-
-        # Uncompress the archive
-        run('tar -xzf /tmp/{} -C {}'.format(archive_filename, archive_folder))
-
-        # Delete the archive
-        run('rm /tmp/{}'.format(archive_filename))
-
-        # Delete old symbolic link if exists
-        if exists('/data/web_static/current'):
-            run('rm /data/web_static/current')
-
-        # Create new symbolic link
-        run('ln -s {} /data/web_static/current'.format(archive_folder))
-
+        run('mkdir -p {}'.format(folder))
+        run('tar -xzf /tmp/{} -C {}'.format(filename, folder))
+        run('rm /tmp/{}'.format(filename))
+        run('mv {}/web_static/* {}'.format(folder, folder))
+        run('rm -rf {}/web_static'.format(folder))
+        run('rm -rf /data/web_static/current')
+        run('ln -s {} /data/web_static/current'.format(folder))
         return True
-
-    except Exception as e:
-        print(e)
+    except:
         return False
 
 
-def do_deploy_with_new_index(archive_path):
-    """Distributes an archive to web servers and sets new index"""
-    if do_deploy(archive_path):
-        try:
-            # Remove default index.html
-            run('rm /data/web_static/releases/{}/index.html'.format(
-                archive_path.split('/')[-1].split('.')[0]))
+def deploy():
+    """
+    Deploys an archive to your web servers
+    """
 
-            # Upload custom index.html
-            put('my_index.html', '/data/web_static/releases/{}/'.format(
-                archive_path.split('/')[-1].split('.')[0]))
-
-            return True
-
-        except Exception as e:
-            print(e)
-            return False
-
-    return False
-
-
-def do_deploy_with_old_index(archive_path):
-    """Distributes an archive to web servers and sets old index"""
-    if do_deploy(archive_path):
-        try:
-            # Remove custom index.html if exists
-            run('rm /data/web_static/releases/{}/my_index.html'.format(
-                archive_path.split('/')[-1].split('.')[0]))
-
-            # Upload default index.html
-            put('0-index.html', '/data/web_static/releases/{}/index.html'.format(
-                archive_path.split('/')[-1].split('.')[0]))
-
-            return True
-
-        except Exception as e:
-            print(e)
-            return False
-
-    return False
+    archive_path = do_pack()
+    if archive_path is None:
+        return False
+    return do_deploy(archive_path)

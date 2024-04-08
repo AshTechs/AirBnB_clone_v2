@@ -1,24 +1,80 @@
 #!/usr/bin/python3
-"""Fabric script to delete out-of-date archives"""
+"""
+Fabric script that deletes out-of-date archives
+"""
 
-from fabric.api import env, run, local, lcd
+from fabric.api import env, run, local
 from datetime import datetime
-from os.path import exists
-env.hosts = ['<IP web-01>', '<IP web-02>']
+import os
+
+env.hosts = ['54.157.134.237', '54.242.154.151']
+
+
+def do_pack():
+    """
+    Creates a .tgz archive from the contents of the web_static folder
+    """
+    try:
+        now = datetime.now().strftime('%Y%m%d%H%M%S')
+        local('mkdir -p versions')
+        file_name = 'versions/web_static_{}.tgz'.format(now)
+        local('tar -cvzf {} web_static'.format(file_name))
+        return file_name
+    except:
+        return None
+
+
+def do_deploy(archive_path):
+    """
+    Distributes an archive to your web servers
+    """
+
+    if not os.path.exists(archive_path):
+        return False
+
+    try:
+        filename = archive_path.split('/')[-1]
+        folder = '/data/web_static/releases/{}'.format(filename.split('.')[0])
+        put(archive_path, '/tmp/')
+        run('mkdir -p {}'.format(folder))
+        run('tar -xzf /tmp/{} -C {}'.format(filename, folder))
+        run('rm /tmp/{}'.format(filename))
+        run('mv {}/web_static/* {}'.format(folder, folder))
+        run('rm -rf {}/web_static'.format(folder))
+        run('rm -rf /data/web_static/current')
+        run('ln -s {} /data/web_static/current'.format(folder))
+        return True
+    except:
+        return False
+
+
+def deploy():
+    """
+    Deploys an archive to your web servers
+    """
+
+    archive_path = do_pack()
+    if archive_path is None:
+        return False
+    return do_deploy(archive_path)
 
 
 def do_clean(number=0):
-    """Deletes out-of-date archives"""
-    number = int(number)
-    if number < 1:
-        number = 1
+    """
+    Deletes out-of-date archives
+    """
+
     try:
-        # Local cleanup
-        with lcd('versions'):
-            local('ls -t | tail -n +{} | xargs rm -f'.format(number + 1))
+        number = int(number)
+        if number < 1:
+            number = 1
 
-        # Remote cleanup
-        run('ls -t /data/web_static/releases | tail -n +{} | xargs rm -rf'.format(number + 1))
+        with cd('/data/web_static/releases'):
+            run('ls -t | tail -n +{} | xargs rm -rf'.format(number + 1))
 
-    except Exception as e:
-        print(e)
+        with cd('/data/web_static'):
+            run('ls -t | tail -n +{} | xargs rm -rf'.format(number + 1))
+
+        return True
+    except:
+        return False

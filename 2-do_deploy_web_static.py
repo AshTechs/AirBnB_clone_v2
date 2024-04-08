@@ -1,5 +1,7 @@
 #!/usr/bin/python3
-"""Fabric script to distribute an archive to web servers"""
+"""
+Fabric script that distributes an archive to your web servers
+"""
 
 from fabric.api import env, put, run
 from os.path import exists
@@ -8,36 +10,24 @@ env.hosts = ['54.157.134.237', '54.242.154.151']
 
 
 def do_deploy(archive_path):
-    """Distributes an archive to web servers"""
+    """
+    Distributes an archive to your web servers
+    """
+
     if not exists(archive_path):
         return False
 
     try:
-        # Upload the archive to /tmp/ directory
+        filename = archive_path.split('/')[-1]
+        folder = '/data/web_static/releases/{}'.format(filename.split('.')[0])
         put(archive_path, '/tmp/')
-
-        # Get archive filename without extension
-        archive_filename = archive_path.split('/')[-1]
-        archive_folder = '/data/web_static/releases/' + archive_filename.split('.')[0]
-
-        # Create directory to uncompress archive
-        run('mkdir -p {}'.format(archive_folder))
-
-        # Uncompress the archive
-        run('tar -xzf /tmp/{} -C {}'.format(archive_filename, archive_folder))
-
-        # Delete the archive
-        run('rm /tmp/{}'.format(archive_filename))
-
-        # Delete old symbolic link if exists
-        if exists('/data/web_static/current'):
-            run('rm /data/web_static/current')
-
-        # Create new symbolic link
-        run('ln -s {} /data/web_static/current'.format(archive_folder))
-
+        run('mkdir -p {}'.format(folder))
+        run('tar -xzf /tmp/{} -C {}'.format(filename, folder))
+        run('rm /tmp/{}'.format(filename))
+        run('mv {}/web_static/* {}'.format(folder, folder))
+        run('rm -rf {}/web_static'.format(folder))
+        run('rm -rf /data/web_static/current')
+        run('ln -s {} /data/web_static/current'.format(folder))
         return True
-
-    except Exception as e:
-        print(e)
+    except:
         return False
