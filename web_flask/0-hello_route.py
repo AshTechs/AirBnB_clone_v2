@@ -1,12 +1,15 @@
 #!/usr/bin/python3
+
 """ Start a flask with application. """
+
 
 from flask import Flask
 
 app = Flask(__name__)
 
+
 # Define the route for the root URL '/'
-@app.route['/', strict_slashes=False]
+@app.route('/', strict_slashes=False)
 def hello_hbnb():
     """ Display 'Hello HBNB! """
     return "hello HBNB!"
