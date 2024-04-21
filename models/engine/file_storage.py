@@ -40,11 +40,11 @@ class FileStorage:
         return self.__objects
 
     def new(self, obj):
-        """Set in __objects obj with key <obj_class_name>.id."""
+        """Sets in __objects obj with key <obj_class_name>.id."""
         self.__objects["{}.{}".format(type(obj).__name__, obj.id)] = obj
 
     def save(self):
-        """Serialize __objects to the JSON file __file_path."""
+        """Serializes __objects to the JSON file __file_path."""
         odict = {o: self.__objects[o].to_dict() for o in self.__objects.keys()}
         with open(self.__file_path, "w", encoding="utf-8") as f:
             json.dump(odict, f)
@@ -61,7 +61,7 @@ class FileStorage:
             pass
 
     def delete(self, obj=None):
-        """Delete a given object from __objects, if only it exists."""
+        """Deletes a given object from __objects, if only it exists."""
         try:
             del self.__objects["{}.{}".format(type(obj).__name__, obj.id)]
         except (AttributeError, KeyError):
